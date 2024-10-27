@@ -1,4 +1,4 @@
-import { IntCodeComputer } from "../common.js";
+import { IntCodeComputer } from "../common/intCodeComputer.js";
 import { input } from "./input.js";
 
 const output = 19690720;
