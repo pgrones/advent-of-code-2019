@@ -41,21 +41,23 @@ export const instructions = [
     true,
     (memory, pointer) => [memory[pointer + 1]],
     (memory, pos, input) => {
-      memory[pos] = input;
+      memory[pos] = input.next?.().value ?? input;
     }
   ),
   new Instruction(
     Opcodes.Output,
     false,
     (memory, pointer) => [memory[pointer + 1]],
-    (_, value) => console.log(value)
+    (_, value) => {
+      return { output: value };
+    }
   ),
   new Instruction(
     Opcodes.JumpIfTrue,
     false,
     (memory, pointer) => memory.slice(pointer + 1, pointer + 3),
     (_, operand, value) => {
-      if (operand !== 0) return value;
+      if (operand !== 0) return { nextPointer: value };
     }
   ),
   new Instruction(
@@ -63,7 +65,7 @@ export const instructions = [
     false,
     (memory, pointer) => memory.slice(pointer + 1, pointer + 3),
     (_, operand, value) => {
-      if (operand === 0) return value;
+      if (operand === 0) return { nextPointer: value };
     }
   ),
   new Instruction(

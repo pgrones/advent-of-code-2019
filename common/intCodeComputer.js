@@ -9,6 +9,7 @@ export class IntCodeComputer {
   #memory = [0];
   #pointer = 0;
   #instructions = instructions;
+  #outputBuffer = [];
 
   get pointer() {
     return this.#pointer;
@@ -16,6 +17,10 @@ export class IntCodeComputer {
 
   get memory() {
     return this.#memory;
+  }
+
+  get outputBuffer() {
+    return this.#outputBuffer;
   }
 
   constructor(program) {
@@ -33,10 +38,19 @@ export class IntCodeComputer {
 
       const params = this.#getParams(instruction, modes);
 
-      const nextPointer = instruction.execute(this.#memory, ...params, input);
+      const result = instruction.execute(this.#memory, ...params, input);
 
-      if (nextPointer !== undefined) this.#pointer = nextPointer;
-      else this.#pointer += params.length + 1;
+      const nextPointer = result?.nextPointer;
+      const output = result?.output;
+
+      if (output !== undefined) this.#outputBuffer.push(output);
+
+      if (nextPointer !== undefined) {
+        this.#pointer = nextPointer;
+        continue;
+      }
+
+      this.#pointer += params.length + 1;
     }
   }
 
@@ -47,6 +61,7 @@ export class IntCodeComputer {
     const [opCodePart1, opCodePart0, ...modes] = [
       ...instructionOpcode,
     ].toReversed();
+
     const opcode = parseInt(opCodePart0 + opCodePart1);
 
     return [opcode, modes.map((x) => parseInt(x))];
