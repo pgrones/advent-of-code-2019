@@ -36,27 +36,31 @@ export class IntCodeComputer {
 
       const instruction = this.#instructions.find((x) => x.opcode === opcode);
 
-      if (!instruction) throw new Error("Unknown opcode: " + opcode);
-
       const params = this.#getParams(instruction, modes);
 
-      const result = instruction.execute(this.#memory, ...params, input);
+      const result = instruction.execute(...params, input);
 
-      const nextPointer = result?.nextPointer;
-      const output = result?.output;
-      const relativeBaseOffset = result?.relativeBaseOffset;
-
-      if (output !== undefined) this.#outputBuffer.push(output);
-      if (relativeBaseOffset !== undefined)
-        this.#relativeBase += relativeBaseOffset;
-
-      if (nextPointer !== undefined) {
-        this.#pointer = nextPointer;
-        continue;
+      switch (result.instruction) {
+        case "modify":
+          this.#memory[result.pos] = result.value;
+          break;
+        case "output":
+          this.#outputBuffer.push(result.value);
+          break;
+        case "relativeBaseOffset":
+          this.#relativeBase += result.value;
+          break;
+        case "nextPointer":
+          this.#pointer = result.value;
+          continue;
+        case "interrupt":
+          return "interrupt";
       }
 
       this.#pointer += params.length + 1;
     }
+
+    return "halt";
   }
 
   #parseOpcode(instructionOpcode) {
@@ -82,6 +86,7 @@ export class IntCodeComputer {
         return mode === Modes.Relative ? this.#relativeBase + param : param;
 
       if (mode === Modes.Pointer) return this.#memory[param] ?? 0;
+
       if (mode === Modes.Relative)
         return this.#memory[this.#relativeBase + param] ?? 0;
 

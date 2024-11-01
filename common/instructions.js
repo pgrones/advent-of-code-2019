@@ -25,72 +25,79 @@ export const instructions = [
     Opcodes.Add,
     true,
     (memory, pointer) => memory.slice(pointer + 1, pointer + 4),
-    (memory, a, b, pos) => {
-      memory[pos] = a + b;
+    (a, b, pos) => {
+      return { instruction: "modify", pos, value: a + b };
     }
   ),
   new Instruction(
     Opcodes.Multiply,
     true,
     (memory, pointer) => memory.slice(pointer + 1, pointer + 4),
-    (memory, a, b, pos) => {
-      memory[pos] = a * b;
+    (a, b, pos) => {
+      return { instruction: "modify", pos, value: a * b };
     }
   ),
   new Instruction(
     Opcodes.Save,
     true,
     (memory, pointer) => [memory[pointer + 1]],
-    (memory, pos, input) => {
-      memory[pos] = input.next?.().value ?? input;
+    (pos, input) => {
+      const nextInput = input.next?.();
+      if (nextInput?.done) return { instruction: "interrupt" };
+
+      return { instruction: "modify", pos, value: nextInput?.value ?? input };
     }
   ),
   new Instruction(
     Opcodes.Output,
     false,
     (memory, pointer) => [memory[pointer + 1]],
-    (_, value) => {
-      return { output: value };
+    (value) => {
+      return { instruction: "output", value };
     }
   ),
   new Instruction(
     Opcodes.JumpIfTrue,
     false,
     (memory, pointer) => memory.slice(pointer + 1, pointer + 3),
-    (_, operand, value) => {
-      if (operand !== 0) return { nextPointer: value };
+    (operand, value) => {
+      if (operand !== 0) return { instruction: "nextPointer", value };
+
+      return { instruction: "noop" };
     }
   ),
   new Instruction(
     Opcodes.JumpIfFalse,
     false,
     (memory, pointer) => memory.slice(pointer + 1, pointer + 3),
-    (_, operand, value) => {
-      if (operand === 0) return { nextPointer: value };
+    (operand, value) => {
+      if (operand === 0) return { instruction: "nextPointer", value };
+
+      return { instruction: "noop" };
     }
   ),
   new Instruction(
     Opcodes.LessThan,
     true,
     (memory, pointer) => memory.slice(pointer + 1, pointer + 4),
-    (memory, a, b, pos) => {
-      memory[pos] = a < b ? 1 : 0;
+    (a, b, pos) => {
+      return { instruction: "modify", pos, value: a < b ? 1 : 0 };
     }
   ),
   new Instruction(
     Opcodes.Equals,
     true,
     (memory, pointer) => memory.slice(pointer + 1, pointer + 4),
-    (memory, a, b, pos) => {
-      memory[pos] = a === b ? 1 : 0;
+    (a, b, pos) => {
+      return { instruction: "modify", pos, value: a === b ? 1 : 0 };
     }
   ),
   new Instruction(
     Opcodes.AdjustRelativeBase,
     false,
     (memory, pointer) => [memory[pointer + 1]],
-    (_, relativeBaseOffset) => {
-      return { relativeBaseOffset };
+    (value) => {
+      return { instruction: "relativeBaseOffset", value };
     }
   ),
 ];

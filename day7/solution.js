@@ -3,11 +3,6 @@ import { input } from "./input.js";
 
 const program = input.split(",").map((x) => parseInt(x));
 
-function* inputGenerator(phase, signal) {
-  yield phase;
-  yield signal;
-}
-
 // yoinked from https://stackoverflow.com/questions/9960908/permutations-in-javascript
 const permute = (inputArr) => {
   const result = [];
@@ -31,9 +26,14 @@ const permute = (inputArr) => {
 
 // --- PART 1 ---
 
-const phaseSettings = permute([0, 1, 2, 3, 4]);
+function* inputGenerator(phase, signal) {
+  yield phase;
+  yield signal;
+}
 
+let phaseSettings = permute([0, 1, 2, 3, 4]);
 let maxSignal = -Infinity;
+
 for (const phaseSetting of phaseSettings) {
   let signal = 0;
 
@@ -43,6 +43,45 @@ for (const phaseSetting of phaseSettings) {
     signal = amplifier.outputBuffer.at(-1);
     maxSignal = Math.max(maxSignal, signal);
   }
+}
+
+console.log(maxSignal);
+
+// --- PART 2 ---
+
+phaseSettings = permute([5, 6, 7, 8, 9]);
+maxSignal = -Infinity;
+
+for (const phaseSetting of phaseSettings) {
+  const amplifiers = phaseSetting.map(() => new IntCodeComputer(program));
+  let currAmplifier = 0;
+  let firstRun = true;
+  let haltedPrograms = 0;
+  let outputs = [0];
+
+  while (true) {
+    const inputs = [...outputs];
+
+    if (firstRun) inputs.unshift(phaseSetting[currAmplifier]);
+
+    const result = amplifiers[currAmplifier].run(inputs.values());
+    if (result === "halt") haltedPrograms++;
+
+    if (haltedPrograms === amplifiers.length) break;
+
+    outputs = [...amplifiers[currAmplifier].outputBuffer];
+    amplifiers[currAmplifier].outputBuffer.splice(
+      0,
+      amplifiers[currAmplifier].outputBuffer.length
+    );
+
+    currAmplifier =
+      currAmplifier + 1 === amplifiers.length ? 0 : currAmplifier + 1;
+
+    if (currAmplifier === 0) firstRun = false;
+  }
+
+  maxSignal = Math.max(maxSignal, amplifiers.at(-1).outputBuffer.at(-1));
 }
 
 console.log(maxSignal);
