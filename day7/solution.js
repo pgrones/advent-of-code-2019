@@ -54,7 +54,8 @@ maxSignal = -Infinity;
 
 for (const phaseSetting of phaseSettings) {
   const amplifiers = phaseSetting.map(() => new IntCodeComputer(program));
-  let currAmplifier = 0;
+  const n = amplifiers.length;
+  let i = 0;
   let firstRun = true;
   let haltedPrograms = 0;
   let outputs = [0];
@@ -62,23 +63,19 @@ for (const phaseSetting of phaseSettings) {
   while (true) {
     const inputs = [...outputs];
 
-    if (firstRun) inputs.unshift(phaseSetting[currAmplifier]);
+    if (firstRun) inputs.unshift(phaseSetting[i]);
 
-    const result = amplifiers[currAmplifier].run(inputs.values());
+    const result = amplifiers[i].run(inputs.values());
     if (result === "halt") haltedPrograms++;
 
-    if (haltedPrograms === amplifiers.length) break;
+    if (haltedPrograms === n) break;
 
-    outputs = [...amplifiers[currAmplifier].outputBuffer];
-    amplifiers[currAmplifier].outputBuffer.splice(
-      0,
-      amplifiers[currAmplifier].outputBuffer.length
-    );
+    outputs = [...amplifiers[i].outputBuffer];
+    amplifiers[i].outputBuffer.length = 0;
 
-    currAmplifier =
-      currAmplifier + 1 === amplifiers.length ? 0 : currAmplifier + 1;
+    i = (i + (1 % n) + n) % n;
 
-    if (currAmplifier === 0) firstRun = false;
+    if (i === 0) firstRun = false;
   }
 
   maxSignal = Math.max(maxSignal, amplifiers.at(-1).outputBuffer.at(-1));
