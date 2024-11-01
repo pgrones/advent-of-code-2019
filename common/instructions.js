@@ -8,6 +8,7 @@ const Opcodes = {
   JumpIfFalse: 6,
   LessThan: 7,
   Equals: 8,
+  AdjustRelativeBase: 9,
 };
 
 class Instruction {
@@ -82,6 +83,14 @@ export const instructions = [
     (memory, pointer) => memory.slice(pointer + 1, pointer + 4),
     (memory, a, b, pos) => {
       memory[pos] = a === b ? 1 : 0;
+    }
+  ),
+  new Instruction(
+    Opcodes.AdjustRelativeBase,
+    false,
+    (memory, pointer) => [memory[pointer + 1]],
+    (_, relativeBaseOffset) => {
+      return { relativeBaseOffset };
     }
   ),
 ];

@@ -3,6 +3,7 @@ import { instructions } from "./instructions.js";
 const Modes = {
   Pointer: 0,
   Immediate: 1,
+  Relative: 2,
 };
 
 export class IntCodeComputer {
@@ -10,6 +11,7 @@ export class IntCodeComputer {
   #pointer = 0;
   #instructions = instructions;
   #outputBuffer = [];
+  #relativeBase = 0;
 
   get pointer() {
     return this.#pointer;
@@ -42,8 +44,11 @@ export class IntCodeComputer {
 
       const nextPointer = result?.nextPointer;
       const output = result?.output;
+      const relativeBaseOffset = result?.relativeBaseOffset;
 
       if (output !== undefined) this.#outputBuffer.push(output);
+      if (relativeBaseOffset !== undefined)
+        this.#relativeBase += relativeBaseOffset;
 
       if (nextPointer !== undefined) {
         this.#pointer = nextPointer;
@@ -71,12 +76,14 @@ export class IntCodeComputer {
     const params = instruction.getParams(this.#memory, this.#pointer);
 
     return params.map((param, index) => {
-      if (instruction.hasAddressParam && index === params.length - 1)
-        return param;
-
       const mode = modes[index] ?? Modes.Pointer;
 
-      if (mode === Modes.Pointer) return this.#memory[param];
+      if (instruction.hasAddressParam && index === params.length - 1)
+        return mode === Modes.Relative ? this.#relativeBase + param : param;
+
+      if (mode === Modes.Pointer) return this.#memory[param] ?? 0;
+      if (mode === Modes.Relative)
+        return this.#memory[this.#relativeBase + param] ?? 0;
 
       return param;
     });
